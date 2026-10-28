@@ -16,13 +16,13 @@ function classificarIMC(IMC){
     } else if (IMC >= 30) {
         alert("Obezin fi: " + IMC)
     }else if (IMC >= 29.0) {
-        alert("OBE SO PSO CE: " + IMC)
+        alert("OBE SÓ PÔ CÊ: " + IMC)
     }else if (IMC >= 25) {
-        alert(" DA PA MIORA NE PAIZAO: " + IMC)
+        alert("DÁ PA MIORA NÉ PAIZÃO: " + IMC)
     }else if (IMC >= 18 ) {
-        alert("iiiiia la magrelao mane: " + IMC)
+        alert("iiiiia lÁ, magrelÃo manÉ: " + IMC)
     }else{
-        alert("peso normi: " + IMC)
+        alert("peso ESQUELÉTIQUINHO: " + IMC)
     }
 }
 
