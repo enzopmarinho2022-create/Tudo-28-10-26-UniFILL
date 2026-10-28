@@ -1,0 +1,356 @@
+
+
+
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anime Memory Game 5x5</title>
+    <style>
+        :root {
+            --bg-color: #1a1a2e;
+            --card-back: #16213e;
+            --card-front: #0f3460;
+            --accent-color: #e94560;
+            --text-color: #ffffff;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 2px 2px var(--accent-color);
+        }
+
+        .scoreboard {
+            display: flex;
+            gap: 30px;
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .scoreboard span strong {
+            color: var(--accent-color);
+        }
+
+        /* Grid 5x5 */
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            grid-template-rows: repeat(5, 1fr);
+            gap: 10px;
+            width: 100%;
+            max-width: 550px;
+            aspect-ratio: 1 / 1;
+        }
+
+        .card {
+            position: relative;
+            cursor: pointer;
+            perspective: 1000px;
+            user-select: none;
+        }
+
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            border-radius: 8px;
+        }
+
+        /* Classes de estado da carta */
+        .card.flipped .card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .card.matched {
+            cursor: default;
+            visibility: hidden; /* Esconde o par quando acertado */
+            transition: visibility 0s 0.6s; /* Espera a animação terminar */
+        }
+
+        .card.joker-revealed {
+            cursor: default;
+            animation: fadeOut 1s forwards;
+            animation-delay: 1s;
+        }
+
+        @keyframes fadeOut {
+            to { opacity: 0; visibility: hidden; }
+        }
+
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 2.5rem;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Verso da Carta (Escondido) */
+        .card-back {
+            background-color: var(--card-back);
+            color: var(--accent-color);
+        }
+
+        .card-back::after {
+            content: "?";
+        }
+
+        /* Frente da Carta (Revelado) */
+        .card-front {
+            background-color: var(--card-front);
+            transform: rotateY(180deg);
+        }
+
+        /* Estilo especial para o Curinga */
+        .joker .card-front {
+            background-color: var(--accent-color);
+            color: #fff;
+            box-shadow: 0 0 15px var(--accent-color);
+        }
+
+        /* Botão de Reiniciar */
+        .btn-reset {
+            margin-top: 20px;
+            padding: 10px 25px;
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s, transform 0.1s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+
+        .btn-reset:hover {
+            background-color: #ff5773;
+        }
+
+        .btn-reset:active {
+            transform: scale(0.95);
+        }
+
+        /* Responsividade básica para telas menores */
+        @media (max-width: 500px) {
+            .card-front { font-size: 1.8rem; }
+            .scoreboard { font-size: 1rem; gap: 15px; }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Anime Match 5x5</h1>
+
+    <div class="scoreboard">
+        <span>Pontos: <strong id="score">0</strong></span>
+        <span>Acertos: <strong id="matches">0/12</strong></span>
+    </div>
+
+    <div class="game-grid" id="grid"></div>
+
+    <button class="btn-reset" onclick="initGame()">Reiniciar Jogo</button>
+
+    <script>
+        // Lista de Emojis representando os Personagens de Anime
+        const animeCharacters = [
+            "🥷", // Naruto / Ninja
+            "🏴‍☠️", // Luffy / Pirata
+            "🔥", // Portgas D. Ace / Natsu
+            "🥦", // Deku (Midoriya)
+            "💀", // Brook / Bleach Shinigami
+            "🧑‍🦲", // Saitama
+            "⚡", // Zenitsu / Pikachu Anime
+            "🐉", // Goku / Dragon Ball
+            "👁️", // Kakashi / Gojo (Olho/Sharingan)
+            "🗡️", // Zoro / Tanjiro
+            "🦊", // Kurama / Naruto
+            "👑"  // Rei dos Piratas / Sukuna
+        ];
+
+        const JOKER_ICON = "🃏"; // Carta Curinga
+
+        let score = 0;
+        let matchesFound = 0;
+        let firstCard = null;
+        let secondCard = null;
+        let lockBoard = false;
+
+        const gridElement = document.getElementById('grid');
+        const scoreElement = document.getElementById('score');
+        const matchesElement = document.getElementById('matches');
+
+        // Inicializa ou reinicia o jogo
+        function initGame() {
+            // Reset de variáveis de controle
+            score = 0;
+            matchesFound = 0;
+            firstCard = null;
+            secondCard = null;
+            lockBoard = false;
+            
+            scoreElement.textContent = score;
+            matchesElement.textContent = `0/12`;
+            gridElement.innerHTML = '';
+
+            // Duplica os personagens para criar os pares (24 cartas)
+            let cardDeck = [...animeCharacters, ...animeCharacters];
+            
+            // Sorteia/Embaralha as 24 cartas dos pares
+            cardDeck.sort(() => Math.random() - 0.5);
+
+            // Insere o Curinga exatamente na posição central (Índice 12 no array de tamanho 25)
+            cardDeck.splice(12, 0, JOKER_ICON);
+
+            // Cria os elementos HTML das cartas no Grid
+            cardDeck.forEach((character, index) => {
+                const card = document.createElement('div');
+                card.classList.add('card');
+                card.dataset.character = character;
+                card.dataset.index = index;
+
+                // Se for a posição 12 (centro do grid 5x5), adiciona a classe joker
+                if (index === 12) {
+                    card.classList.add('joker');
+                }
+
+                card.innerHTML = `
+                    <div class="card-inner">
+                        <div class="card-back"></div>
+                        <div class="card-front">${character}</div>
+                    </div>
+                `;
+
+                card.addEventListener('click', flipCard);
+                gridElement.appendChild(card);
+            });
+        }
+
+        // Lógica de virar a carta
+        function flipCard() {
+            if (lockBoard) return;
+            if (this === firstCard) return;
+            if (this.classList.contains('matched') || this.classList.contains('joker-revealed')) return;
+
+            this.classList.add('flipped');
+
+            // Caso especial: Jogador clicou no Curinga Central
+            if (this.classList.contains('joker')) {
+                handleJoker(this);
+                return;
+            }
+
+            // Primeira carta virada da jogada atual
+            if (!firstCard) {
+                firstCard = this;
+                return;
+            }
+
+            // Segunda carta virada
+            secondCard = this;
+            checkMatch();
+        }
+
+        // Processa o clique na carta Curinga
+        function handleJoker(jokerCard) {
+            lockBoard = true;
+            score += 25; // Bônus substancial
+            scoreElement.textContent = score;
+            jokerCard.classList.add('joker-revealed');
+            
+            // Remove o evento para não ser clicada novamente
+            jokerCard.removeEventListener('click', flipCard);
+
+            setTimeout(() => {
+                lockBoard = false;
+            }, 1000);
+        }
+
+        // Checa se as duas cartas viradas formam um par
+        function checkMatch() {
+            let isMatch = firstCard.dataset.character === secondCard.dataset.character;
+
+            if (isMatch) {
+                disableCards();
+            } else {
+                unflipCards();
+            }
+        }
+
+        // Se acertou o par
+        function disableCards() {
+            firstCard.classList.add('matched');
+            secondCard.classList.add('matched');
+
+            score += 10;
+            matchesFound++;
+            
+            scoreElement.textContent = score;
+            matchesElement.textContent = `${matchesFound}/12`;
+
+            resetTurn();
+
+            // Verifica condição de vitória
+            if (matchesFound === 12) {
+                setTimeout(() => {
+                    alert(`Parabéns! Você encontrou todos os pares!\nPontuação Final: ${score} pontos.`);
+                }, 800);
+            }
+        }
+
+        // Se errou o par
+        function unflipCards() {
+            lockBoard = true;
+            score = Math.max(0, score - 2); // Evita pontos negativos se preferir, ou tire o Math.max para permitir negativos
+            scoreElement.textContent = score;
+
+            setTimeout(() => {
+                firstCard.classList.remove('flipped');
+                secondCard.classList.remove('flipped');
+                resetTurn();
+            }, 1000);
+        }
+
+        // Limpa as variáveis para a próxima jogada
+        function resetTurn() {
+            [firstCard, secondCard] = [null, null];
+            lockBoard = false;
+        }
+
+        // Inicia o jogo assim que a página carrega
+        window.onload = initGame;
+    </script>
+</body>
+</html>
+DOC-20260516-WA0003.
+Exibindo DOC-20260516-WA0003..

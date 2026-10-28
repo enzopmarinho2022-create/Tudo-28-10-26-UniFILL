@@ -1,0 +1,17 @@
+table{
+    border-collapse: collapse;
+
+}
+
+td{
+border: 2px solid rgb(248, 246, 246);
+
+
+}
+body{
+
+color: rgb(240, 9, 9);
+
+
+    background-color: black;
+}
