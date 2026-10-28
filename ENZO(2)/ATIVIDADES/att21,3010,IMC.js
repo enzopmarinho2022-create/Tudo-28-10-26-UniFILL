@@ -1,5 +1,6 @@
 let peso = prompt("Digite o seu peso(KG): ")
 let altura = prompt("Informe a sua altura(m): ")
+gerarRelatorio(peso, altura)
 
 let IMC = calcularIMC(peso, altura)
 
@@ -23,3 +24,7 @@ function classificarIMC(IMC){
     }
 }
 
+function gerarRelatorio(peso, altura) {
+    let IMC = calcularIMC(peso, altura)
+    classificarIMC(IMC)
+}
