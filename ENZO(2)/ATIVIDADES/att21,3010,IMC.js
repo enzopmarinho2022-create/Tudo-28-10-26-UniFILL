@@ -9,18 +9,20 @@ return peso / (altura * altura)
 }
 
 function classificarIMC(IMC){
-    if(IMC >= 40.0) {
-        alert("Obesidade mortal KKKKSKSKSKSKSKSKS")   
-    }else if (IMC >= 39.9 ) {
+    if(IMC >= 40) {
+        alert("Obesidade mortal KKKKSKSKSKSKSKSKS: " + IMC)   
+    }else if (IMC >= 35 ) {
         alert("OBESAAAAO MENO: " + IMC)
-    } else if (IMC >= 35.0) {
+    } else if (IMC >= 30) {
         alert("Obezin fi: " + IMC)
     }else if (IMC >= 29.0) {
         alert("OBE SO PSO CE: " + IMC)
-    }else if (IMC >= 25.0) {
+    }else if (IMC >= 25) {
         alert(" DA PA MIORA NE PAIZAO: " + IMC)
-    }else if (IMC <= 18.5 ) {
+    }else if (IMC >= 18 ) {
         alert("iiiiia la magrelao mane: " + IMC)
+    }else{
+        alert("peso normi: " + IMC)
     }
 }
 
